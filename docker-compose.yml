@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: amilcar_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: amilcar_user
+      POSTGRES_PASSWORD: amilcar_pass
+      POSTGRES_DB: amilcar_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: ./backend
+    container_name: amilcar_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://amilcar_user:amilcar_pass@db:5432/amilcar_db
+      DATABASE_URL_SYNC: postgresql://amilcar_user:amilcar_pass@db:5432/amilcar_db
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

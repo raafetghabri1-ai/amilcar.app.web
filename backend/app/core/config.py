@@ -1,0 +1,34 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+class Settings:
+    PROJECT_NAME: str = "AMILCAR Auto Care API"
+    VERSION: str = "1.0.0"
+    DESCRIPTION: str = "نظام إدارة متكامل لمركز عناية السيارات الفاخرة - محرس، صفاقس، تونس"
+
+    # Database
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL",
+        "postgresql+asyncpg://amilcar_user:amilcar_pass@localhost:5432/amilcar_db",
+    )
+    DATABASE_URL_SYNC: str = os.getenv(
+        "DATABASE_URL_SYNC",
+        "postgresql://amilcar_user:amilcar_pass@localhost:5432/amilcar_db",
+    )
+
+    # JWT
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "CHANGE_ME_IN_PRODUCTION")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
+
+    # CORS
+    ALLOWED_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:8000",
+    ]
+
+
+settings = Settings()

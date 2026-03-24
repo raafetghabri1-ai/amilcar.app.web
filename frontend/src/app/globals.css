@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/* ===== Ethereal Demo Font ===== */
+@font-face {
+  font-family: "Ethereal";
+  src: url("/fonts/Ethereal-Regular.otf") format("opentype"),
+       url("/fonts/Ethereal-Regular.ttf") format("truetype"),
+       url("/fonts/Ethereal-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Ethereal";
+  src: url("/fonts/Ethereal-Bold.otf") format("opentype"),
+       url("/fonts/Ethereal-Bold.ttf") format("truetype"),
+       url("/fonts/Ethereal-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ===== AMILCAR Brand Colors ===== */
+:root {
+  /* الخلفية */
+  --amilcar-black: #000000;
+  --amilcar-black-soft: #0a0a0a;
+  --amilcar-black-card: #111111;
+  --amilcar-black-hover: #1a1a1a;
+
+  /* الأحمر القرطاجي */
+  --amilcar-red: #C0151A;
+  --amilcar-red-dark: #8B0000;
+  --amilcar-red-glow: rgba(192, 21, 26, 0.3);
+
+  /* الفضي / الكروم */
+  --amilcar-silver: #C0C0C0;
+  --amilcar-silver-light: #E8E8E8;
+  --amilcar-silver-dark: #808080;
+
+  /* النصوص */
+  --amilcar-white: #FFFFFF;
+  --amilcar-text-secondary: #B0B0B0;
+  --amilcar-text-muted: #666666;
+
+  /* الخط الفاصل */
+  --amilcar-navy: #1A2744;
+
+  --background: #000000;
+  --foreground: #FFFFFF;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Expose brand colors to Tailwind */
+  --color-amilcar-red: #C0151A;
+  --color-amilcar-red-dark: #8B0000;
+  --color-amilcar-silver: #C0C0C0;
+  --color-amilcar-silver-light: #E8E8E8;
+  --color-amilcar-navy: #1A2744;
+  --color-amilcar-card: #111111;
+  --color-amilcar-hover: #1a1a1a;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Ethereal", Arial, Helvetica, sans-serif;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C0151A;
+}

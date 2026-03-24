@@ -1,0 +1,16 @@
+# ──── Core ────
+fastapi==0.115.*
+uvicorn[standard]==0.34.*
+pydantic[email]==2.*
+python-dotenv==1.*
+
+# ──── Database ────
+sqlalchemy[asyncio]==2.*
+asyncpg==0.30.*
+alembic==1.*
+
+# ──── Auth ────
+python-jose[cryptography]==3.*
+passlib[bcrypt]==1.*
+python-multipart==0.*
+bcrypt==4.2.*
