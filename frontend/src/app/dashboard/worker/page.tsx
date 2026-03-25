@@ -3,7 +3,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/lib/i18n";
-import { api, type BookingDetail, type BookingStatus } from "@/lib/api";
+import Link from "next/link";
+import {
+  api,
+  type BookingDetail,
+  type BookingStatus,
+  type AttendanceRecord,
+  type WorkerMonthlyStats,
+} from "@/lib/api";
 
 const STATUS_COLORS: Record<BookingStatus, string> = {
   pending: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
@@ -27,39 +34,56 @@ export default function WorkerDashboard() {
   const { t, locale: lang } = useI18n();
 
   const [bookings, setBookings] = useState<BookingDetail[]>([]);
-  const [allBookings, setAllBookings] = useState<BookingDetail[]>([]);
+  const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord | null>(null);
+  const [stats, setStats] = useState<WorkerMonthlyStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"mine" | "all">("mine");
+  const [actionLoading, setActionLoading] = useState(false);
 
   const today = fmtDate(new Date());
 
-  const loadBookings = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
-      const [mine, all] = await Promise.all([
+      const [bk, att, st] = await Promise.all([
         api.get<BookingDetail[]>(`/api/v1/bookings/?date_from=${today}&date_to=${today}`),
-        api.get<BookingDetail[]>(`/api/v1/bookings/calendar?date=${today}`),
+        api.get<AttendanceRecord | null>("/api/v1/attendance/today").catch(() => null),
+        api.get<WorkerMonthlyStats>("/api/v1/attendance/my-stats").catch(() => null),
       ]);
-      setBookings(mine);
-      setAllBookings(all);
-    } catch {
-      /* ignore */
-    }
+      setBookings(bk);
+      setTodayAttendance(att);
+      setStats(st);
+    } catch { /* */ }
     setLoading(false);
   }, [today]);
 
   useEffect(() => {
-    loadBookings();
-    const interval = setInterval(loadBookings, 30_000);
+    loadData();
+    const interval = setInterval(loadData, 30_000);
     return () => clearInterval(interval);
-  }, [loadBookings]);
+  }, [loadData]);
+
+  async function handleCheckIn() {
+    setActionLoading(true);
+    try {
+      const rec = await api.post<AttendanceRecord>("/api/v1/attendance/checkin", {});
+      setTodayAttendance(rec);
+    } catch { /* */ }
+    setActionLoading(false);
+  }
+
+  async function handleCheckOut() {
+    setActionLoading(true);
+    try {
+      const rec = await api.post<AttendanceRecord>("/api/v1/attendance/checkout", {});
+      setTodayAttendance(rec);
+    } catch { /* */ }
+    setActionLoading(false);
+  }
 
   async function updateStatus(id: number, status: BookingStatus) {
     try {
       await api.patch(`/api/v1/bookings/${id}`, { status });
-      await loadBookings();
-    } catch {
-      /* ignore */
-    }
+      await loadData();
+    } catch { /* */ }
   }
 
   function getStatusLabel(s: BookingStatus): string {
@@ -69,7 +93,6 @@ export default function WorkerDashboard() {
   const inProgress = bookings.filter((b) => b.status === "in_progress");
   const upcoming = bookings.filter((b) => ["pending", "confirmed"].includes(b.status));
   const completed = bookings.filter((b) => b.status === "completed");
-  const displayList = tab === "mine" ? bookings : allBookings;
 
   if (loading) {
     return (
@@ -89,70 +112,137 @@ export default function WorkerDashboard() {
         <p className="mt-1 text-[var(--amilcar-text-secondary)]">{t.worker.subtitle}</p>
       </div>
 
-      {/* Stats row */}
-      <div className="mb-6 grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 p-4 text-center">
-          <p className="text-2xl font-bold text-orange-400">{inProgress.length}</p>
-          <p className="text-xs text-[var(--amilcar-text-secondary)]">{t.bookings.status.in_progress}</p>
+      {/* ═══ Attendance Card ═══ */}
+      <div className="mb-6 rounded-2xl border border-white/[0.06] bg-[var(--amilcar-card)] p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+            📋 {t.worker.todayStatus}
+          </h2>
+          {todayAttendance && (
+            <span className="rounded-full bg-green-500/20 border border-green-500/30 px-2.5 py-0.5 text-[10px] font-bold text-green-400">
+              ✅ {t.worker.present}
+            </span>
+          )}
         </div>
-        <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-center">
-          <p className="text-2xl font-bold text-blue-400">{upcoming.length}</p>
-          <p className="text-xs text-[var(--amilcar-text-secondary)]">{t.bookings.status.pending}</p>
+
+        {!todayAttendance ? (
+          <button
+            onClick={handleCheckIn}
+            disabled={actionLoading}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-[var(--amilcar-red)] px-4 py-3 font-bold text-white transition hover:bg-[#d6181d] hover:shadow-[0_0_20px_rgba(192,21,26,0.4)] disabled:opacity-50"
+          >
+            {actionLoading ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : (
+              <>🕐 {t.worker.checkIn}</>
+            )}
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex-1 rounded-lg bg-green-500/10 border border-green-500/20 px-3 py-2">
+                <span className="text-green-400/70 text-xs">{t.worker.checkedInAt}</span>
+                <p className="font-mono font-bold text-green-400">{todayAttendance.check_in?.slice(0, 5) || "—"}</p>
+              </div>
+              <div className="flex-1 rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-2">
+                <span className="text-[var(--amilcar-text-secondary)] text-xs">{t.worker.checkedOutAt}</span>
+                <p className="font-mono font-bold text-white">{todayAttendance.check_out?.slice(0, 5) || "—"}</p>
+              </div>
+            </div>
+
+            {!todayAttendance.check_out && (
+              <button
+                onClick={handleCheckOut}
+                disabled={actionLoading}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border border-[var(--amilcar-red)]/30 bg-[var(--amilcar-red)]/10 px-4 py-2.5 font-medium text-[var(--amilcar-red)] transition hover:bg-[var(--amilcar-red)]/20 disabled:opacity-50"
+              >
+                {actionLoading ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--amilcar-red)]/30 border-t-[var(--amilcar-red)]" />
+                ) : (
+                  <>🚪 {t.worker.checkOut}</>
+                )}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ═══ Monthly Stats ═══ */}
+      <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="rounded-xl border border-[var(--amilcar-red)]/20 bg-[var(--amilcar-red)]/5 p-4 text-center">
+          <p className="text-2xl font-bold text-[var(--amilcar-red)]">{stats?.completed_this_month ?? 0}</p>
+          <p className="text-xs text-[var(--amilcar-text-secondary)]">{t.worker.completedThisMonth}</p>
         </div>
-        <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-center">
-          <p className="text-2xl font-bold text-green-400">{completed.length}</p>
-          <p className="text-xs text-[var(--amilcar-text-secondary)]">{t.bookings.status.completed}</p>
+        <div className="rounded-xl border border-white/[0.06] bg-[var(--amilcar-card)] p-4 text-center">
+          <p className="text-2xl font-bold text-white">{stats?.completed_total ?? 0}</p>
+          <p className="text-xs text-[var(--amilcar-text-secondary)]">{t.worker.completedTotal}</p>
+        </div>
+        <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4 text-center">
+          <p className="text-2xl font-bold text-green-400">{stats?.attendance_days ?? 0}</p>
+          <p className="text-xs text-green-400/70">{t.worker.attendanceDays}</p>
+        </div>
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
+          <p className="text-2xl font-bold text-amber-400">{stats?.performance_points ?? 0}</p>
+          <p className="text-xs text-amber-400/70">{t.worker.performancePoints}</p>
         </div>
       </div>
 
-      {/* Live screen link */}
-      <a
-        href="/live"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mb-6 flex items-center gap-3 rounded-xl border border-[var(--amilcar-red)]/30 bg-[var(--amilcar-red)]/10 p-4 transition hover:bg-[var(--amilcar-red)]/20"
-      >
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--amilcar-red)]/20 text-lg">📺</span>
-        <div>
-          <p className="font-semibold text-white">{t.worker.openLive}</p>
-          <p className="text-sm text-[var(--amilcar-text-secondary)]">{t.nav.live}</p>
-        </div>
-        <span className="ms-auto text-[var(--amilcar-text-secondary)]">↗</span>
-      </a>
-
-      {/* Tab toggle */}
-      <div className="mb-4 flex items-center gap-2">
-        <div className="flex rounded-lg border border-white/10 overflow-hidden">
-          {(["mine", "all"] as const).map((v) => (
-            <button
-              key={v}
-              onClick={() => setTab(v)}
-              className={`px-4 py-1.5 text-sm transition ${
-                tab === v
-                  ? "bg-[var(--amilcar-red)] text-white"
-                  : "text-[var(--amilcar-text-secondary)] hover:bg-white/5"
-              }`}
-            >
-              {v === "mine" ? t.worker.myBookings : t.worker.allBookings}
-            </button>
-          ))}
-        </div>
+      {/* ═══ Quick Actions ═══ */}
+      <h2 className="mb-3 text-sm font-semibold text-white">{t.worker.quickActions}</h2>
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Link
+          href="/dashboard/worker/bookings"
+          className="flex items-start gap-3 rounded-xl border border-white/[0.06] bg-[var(--amilcar-card)] p-4 transition hover:border-[var(--amilcar-red)]/30 hover:bg-[var(--amilcar-hover)]"
+        >
+          <span className="text-xl">📋</span>
+          <div>
+            <span className="font-semibold text-white">{t.worker.bookingsPage}</span>
+            <span className="mt-0.5 block text-xs text-[var(--amilcar-text-secondary)]">{t.worker.bookingsPageDesc}</span>
+          </div>
+        </Link>
+        <Link
+          href="/dashboard/worker/attendance"
+          className="flex items-start gap-3 rounded-xl border border-white/[0.06] bg-[var(--amilcar-card)] p-4 transition hover:border-[var(--amilcar-red)]/30 hover:bg-[var(--amilcar-hover)]"
+        >
+          <span className="text-xl">🗓️</span>
+          <div>
+            <span className="font-semibold text-white">{t.worker.attendance}</span>
+            <span className="mt-0.5 block text-xs text-[var(--amilcar-text-secondary)]">{t.worker.attendanceDesc}</span>
+          </div>
+        </Link>
+        <a
+          href="/live"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-start gap-3 rounded-xl border border-[var(--amilcar-red)]/20 bg-[var(--amilcar-red)]/5 p-4 transition hover:border-[var(--amilcar-red)]/40 hover:bg-[var(--amilcar-red)]/10"
+        >
+          <span className="text-xl">📺</span>
+          <div>
+            <span className="font-semibold text-white">{t.worker.openLive}</span>
+            <span className="mt-0.5 block text-xs text-[var(--amilcar-text-secondary)]">{t.nav.live}</span>
+          </div>
+        </a>
       </div>
 
-      {/* Bookings list */}
-      {displayList.length === 0 ? (
+      {/* ═══ Today's Bookings ═══ */}
+      <h2 className="mb-3 text-sm font-semibold text-white flex items-center gap-2">
+        🔧 {t.worker.todayBookings}
+        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white">{bookings.filter((b) => b.status !== "cancelled").length}</span>
+      </h2>
+
+      {bookings.filter((b) => b.status !== "cancelled").length === 0 ? (
         <div className="rounded-xl border border-white/[0.06] bg-[var(--amilcar-card)] p-8 text-center">
           <p className="text-[var(--amilcar-text-secondary)]">{t.worker.noBookingsToday}</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {displayList
+          {bookings
             .filter((b) => b.status !== "cancelled")
             .sort((a, b) => a.booking_time.localeCompare(b.booking_time))
             .map((b) => (
               <div
                 key={b.id}
-                className={`rounded-xl border p-4 transition ${STATUS_COLORS[b.status].replace(/text-\S+/, "")}`}
+                className="rounded-xl border border-white/[0.06] bg-[var(--amilcar-card)] p-4 transition hover:border-white/10"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -170,18 +260,12 @@ export default function WorkerDashboard() {
                     </div>
                     <div className="mt-2 flex flex-wrap gap-3 text-sm text-[var(--amilcar-text-secondary)]">
                       <span>👤 {b.client_name}</span>
-                      {b.client_phone && <span>📞 {b.client_phone}</span>}
                       {b.vehicle_info && <span>🚗 {b.vehicle_info}</span>}
                       <span>💰 {b.total_price} د.ت</span>
                       {b.service_duration && <span>⏱ {b.service_duration} {t.bookings.minutes}</span>}
-                      {b.worker_name && <span>🔧 {b.worker_name}</span>}
                     </div>
-                    {b.notes && (
-                      <p className="mt-1 text-xs text-[var(--amilcar-text-secondary)] italic">📝 {b.notes}</p>
-                    )}
                   </div>
 
-                  {/* Status action button */}
                   {NEXT_STATUS[b.status] && (
                     <button
                       onClick={() => updateStatus(b.id, NEXT_STATUS[b.status]!)}
@@ -191,8 +275,9 @@ export default function WorkerDashboard() {
                           : "bg-green-500/20 border-green-500/30 text-green-400 hover:bg-green-500/30"
                       }`}
                     >
-                      {NEXT_STATUS[b.status] === "in_progress" ? "🔧 " : "✅ "}
-                      {getStatusLabel(NEXT_STATUS[b.status]!)}
+                      {NEXT_STATUS[b.status] === "in_progress"
+                        ? `🔧 ${t.worker.startWork}`
+                        : `✅ ${t.worker.finishWork}`}
                     </button>
                   )}
                 </div>

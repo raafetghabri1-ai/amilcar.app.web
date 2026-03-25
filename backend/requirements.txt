@@ -14,3 +14,6 @@ python-jose[cryptography]==3.*
 passlib[bcrypt]==1.*
 python-multipart==0.*
 bcrypt==4.2.*
+
+# ──── Notifications ────
+firebase-admin==6.8.*

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1 import auth, users, services, bookings, products, attendance, finance, orders
+from app.api.v1 import auth, users, services, bookings, products, attendance, finance, orders, devices
 
 router = APIRouter(prefix="/api/v1")
 
@@ -10,5 +10,6 @@ router.include_router(services.router, prefix="/services", tags=["الخدمات
 router.include_router(bookings.router, prefix="/bookings", tags=["الحجوزات - Bookings"])
 router.include_router(products.router, prefix="/products", tags=["المتجر - Products"])
 router.include_router(orders.router, prefix="/orders", tags=["الطلبات - Orders"])
+router.include_router(devices.router, prefix="/devices", tags=["الأجهزة - Devices"])
 router.include_router(attendance.router, prefix="/attendance", tags=["الحضور - Attendance"])
 router.include_router(finance.router, prefix="/finance", tags=["المالية - Finance"])

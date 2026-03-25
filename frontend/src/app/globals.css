@@ -87,3 +87,28 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #C0151A;
 }
+
+/* ===== Light Theme ===== */
+[data-theme="light"] {
+  --amilcar-black: #FFFFFF;
+  --amilcar-black-soft: #F5F5F5;
+  --amilcar-black-card: #FFFFFF;
+  --amilcar-black-hover: #F0F0F0;
+  --amilcar-white: #111111;
+  --amilcar-text-secondary: #555555;
+  --amilcar-text-muted: #888888;
+  --background: #F5F5F5;
+  --foreground: #111111;
+}
+
+[data-theme="light"] body {
+  background: #F5F5F5;
+  color: #111111;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: #eee;
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #ccc;
+}

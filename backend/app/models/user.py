@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime, timezone
 from sqlalchemy import (
-    Column, Integer, String, Boolean, DateTime, Enum, Text, Numeric,
+    Column, Integer, String, Boolean, DateTime, Date, Enum, Text, Numeric,
 )
 from app.core.database import Base
 
@@ -19,6 +19,7 @@ class User(Base):
     full_name = Column(String(150), nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
     phone = Column(String(20), unique=True, index=True, nullable=False)
+    date_of_birth = Column(Date, nullable=True)
     hashed_password = Column(String(255), nullable=False)
     role = Column(Enum(UserRole, values_callable=lambda e: [x.value for x in e]), nullable=False, default=UserRole.CLIENT)
     is_active = Column(Boolean, default=True)

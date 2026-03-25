@@ -94,6 +94,7 @@ class ProfileUpdate(BaseModel):
     full_name: str | None = None
     email: str | None = None
     phone: str | None = None
+    date_of_birth: str | None = None
 
 
 @router.patch("/me", response_model=UserOut)

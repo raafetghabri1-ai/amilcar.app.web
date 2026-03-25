@@ -4,9 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.api.v1.router import router as api_router
+from app.core.database import async_session
+from app.seed import seed_services
 
 # Import all models so Base.metadata knows about them
-from app.models import user, service, booking, product, attendance, order  # noqa: F401
+from app.models import user, service, booking, product, attendance, order, device_token  # noqa: F401
 
 
 app = FastAPI(
@@ -32,6 +34,8 @@ app.include_router(api_router)
 async def on_startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    async with async_session() as db:
+        await seed_services(db)
 
 
 @app.get("/", tags=["Health"])

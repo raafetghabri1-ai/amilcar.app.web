@@ -177,7 +177,7 @@ export default function StorePage() {
                     {p.description && <p className="mt-1 text-sm text-[var(--amilcar-text-secondary)] line-clamp-2">{p.description}</p>}
                   </div>
                   <div className="border-t border-white/[0.06] p-4 flex items-center justify-between">
-                    <span className="text-lg font-bold text-white">{p.price} د.ت</span>
+                    <span className="text-lg font-bold text-white">{p.price} TND</span>
                     {inCart ? (
                       <div className="flex items-center gap-2">
                         <button onClick={() => updateQuantity(p.id, inCart.quantity - 1)} className="h-8 w-8 rounded-lg bg-white/10 text-white hover:bg-white/20 transition">−</button>
@@ -201,7 +201,7 @@ export default function StorePage() {
               onClick={() => setShowCart(true)}
               className="fixed bottom-6 end-6 z-40 flex items-center gap-2 rounded-full bg-[var(--amilcar-red)] px-6 py-3 font-medium text-white shadow-2xl shadow-[var(--amilcar-red)]/30 hover:bg-[var(--amilcar-red)]/90 transition"
             >
-              🛒 {t.client.cart} ({cartCount}) — {cartTotal.toFixed(1)} د.ت
+              🛒 {t.client.cart} ({cartCount}) — {cartTotal.toFixed(1)} TND
             </button>
           )}
 
@@ -218,7 +218,7 @@ export default function StorePage() {
                     <div key={item.product.id} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[var(--amilcar-card)] p-3">
                       <div>
                         <span className="font-medium text-white">{lang === "ar" ? item.product.name_ar || item.product.name : item.product.name}</span>
-                        <span className="ms-2 text-sm text-[var(--amilcar-text-secondary)]">{item.product.price} د.ت</span>
+                        <span className="ms-2 text-sm text-[var(--amilcar-text-secondary)]">{item.product.price} TND</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} className="h-7 w-7 rounded bg-white/10 text-white text-sm">−</button>
@@ -230,7 +230,7 @@ export default function StorePage() {
                   ))}
                 </div>
                 <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-4">
-                  <span className="text-lg font-bold text-white">{t.client.total}: {cartTotal.toFixed(1)} د.ت</span>
+                  <span className="text-lg font-bold text-white">{t.client.total}: {cartTotal.toFixed(1)} TND</span>
                   <button onClick={handleOrder} disabled={ordering} className="rounded-xl bg-[var(--amilcar-red)] px-6 py-2.5 font-medium text-white hover:bg-[var(--amilcar-red)]/80 disabled:opacity-50 transition">
                     {ordering ? t.saving : t.client.placeOrder}
                   </button>
@@ -255,13 +255,13 @@ export default function StorePage() {
               <div key={order.id} className="rounded-2xl border border-white/[0.06] bg-[var(--amilcar-card)] p-5">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm text-[var(--amilcar-text-secondary)]">#{order.id} — {new Date(order.created_at).toLocaleDateString(lang === "ar" ? "ar-TN" : "fr-FR")}</span>
-                  <span className="font-bold text-white">{order.total_amount} د.ت</span>
+                  <span className="font-bold text-white">{order.total_amount} TND</span>
                 </div>
                 <div className="space-y-1">
                   {order.items.map((item) => (
                     <div key={item.id} className="flex items-center justify-between text-sm">
                       <span className="text-white">{lang === "ar" ? item.product_name_ar || item.product_name : item.product_name} × {item.quantity}</span>
-                      <span className="text-[var(--amilcar-text-secondary)]">{(item.unit_price * item.quantity).toFixed(1)} د.ت</span>
+                      <span className="text-[var(--amilcar-text-secondary)]">{(item.unit_price * item.quantity).toFixed(1)} TND</span>
                     </div>
                   ))}
                 </div>

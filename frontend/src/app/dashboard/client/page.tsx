@@ -139,7 +139,7 @@ export default function ClientDashboard() {
                       <div className="mt-1.5 flex flex-wrap gap-3 text-sm text-[var(--amilcar-text-secondary)]">
                         <span>📅 {b.booking_date}</span>
                         <span>🕐 {b.booking_time?.slice(0, 5)}</span>
-                        <span>💰 {b.total_price} د.ت</span>
+                        <span>💰 {b.total_price} TND</span>
                         {b.vehicle_info && <span>🚗 {b.vehicle_info}</span>}
                       </div>
                     </div>

@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/lib/i18n";
 import Link from "next/link";
 import { api, type ServiceItem, type Vehicle } from "@/lib/api";
+import { formatServicePriceLabel, getServicePresentation } from "@/lib/service-presentation";
 
 const TIME_SLOTS: string[] = [];
 for (let h = 8; h <= 19; h++) {
@@ -162,16 +163,17 @@ export default function BookingPage() {
                 }`}
               >
                 <div className="font-semibold text-white">{lang === "ar" ? s.name_ar || s.name : s.name}</div>
+                <p className="mt-1 text-sm text-white/80">{lang === "ar" ? getServicePresentation(s).headlineAr : getServicePresentation(s).headlineFr}</p>
                 {s.description && <p className="mt-1 text-sm text-[var(--amilcar-text-secondary)] line-clamp-2">{s.description}</p>}
                 <div className="mt-2 flex items-center gap-3 text-sm">
                   {user?.is_vip && user.vip_discount_percent > 0 ? (
                     <>
-                      <span className="text-white/40 line-through">{s.price} د.ت</span>
-                      <span className="text-amber-400 font-bold">{(s.price * (100 - user.vip_discount_percent) / 100).toFixed(1)} د.ت</span>
+                      <span className="text-white/40 line-through">{formatServicePriceLabel(s, lang)}</span>
+                      <span className="text-amber-400 font-bold">{(s.price * (100 - user.vip_discount_percent) / 100).toFixed(1)} TND</span>
                       <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">-{user.vip_discount_percent}%</span>
                     </>
                   ) : (
-                    <span className="text-[var(--amilcar-red)] font-bold">{s.price} د.ت</span>
+                    <span className="text-[var(--amilcar-red)] font-bold">{formatServicePriceLabel(s, lang)}</span>
                   )}
                   <span className="text-[var(--amilcar-text-secondary)]">⏱ {s.duration_minutes} {t.bookings.minutes}</span>
                 </div>
@@ -287,11 +289,11 @@ export default function BookingPage() {
               <div className="text-end">
                 {vipPrice ? (
                   <div>
-                    <span className="text-white/40 line-through text-sm">{selectedService.price} د.ت</span>
-                    <span className="ms-2 text-xl font-bold text-amber-400">{vipPrice} د.ت</span>
+                    <span className="text-white/40 line-through text-sm">{selectedService.price} TND</span>
+                    <span className="ms-2 text-xl font-bold text-amber-400">{vipPrice} TND</span>
                   </div>
                 ) : (
-                  <span className="text-xl font-bold text-white">{selectedService.price} د.ت</span>
+                  <span className="text-xl font-bold text-white">{formatServicePriceLabel(selectedService, lang)}</span>
                 )}
               </div>
             </div>

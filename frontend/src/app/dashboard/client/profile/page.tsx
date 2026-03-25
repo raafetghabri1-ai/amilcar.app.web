@@ -130,7 +130,7 @@ export default function ProfilePage() {
                 <p className="text-xs text-[var(--amilcar-text-secondary)]">{t.bookings.totalVisits}</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{history.total_spent} <span className="text-sm">د.ت</span></p>
+                <p className="text-2xl font-bold text-white">{history.total_spent} <span className="text-sm">TND</span></p>
                 <p className="text-xs text-[var(--amilcar-text-secondary)]">{t.bookings.totalSpent}</p>
               </div>
               <div>
@@ -329,7 +329,7 @@ export default function ProfilePage() {
                     <span className="font-medium text-white">{lang === "ar" ? b.service_name_ar || b.service_name : b.service_name}</span>
                     <div className="flex gap-3 text-xs text-[var(--amilcar-text-secondary)]">
                       <span>📅 {b.booking_date}</span>
-                      <span>💰 {b.total_price} د.ت</span>
+                      <span>💰 {b.total_price} TND</span>
                       {b.is_paid && <span className="text-green-400">{t.bookings.payment.paid}</span>}
                     </div>
                   </div>

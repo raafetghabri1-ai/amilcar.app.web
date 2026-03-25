@@ -7,7 +7,10 @@ from app.core.security import require_roles, hash_password
 from app.models.user import User, UserRole
 from app.models.attendance import Attendance, AttendanceStatus
 from app.models.booking import Booking, BookingStatus
-from app.schemas.user import UserCreate, UserOut, UserUpdate, WorkerStats
+from app.models.service import Service, Vehicle
+from app.models.order import Order, OrderItem
+from app.models.product import Product
+from app.schemas.user import UserCreate, UserOut, UserUpdate, WorkerStats, ClientDetail
 
 router = APIRouter()
 
@@ -151,3 +154,93 @@ async def delete_user(
         raise HTTPException(status_code=403, detail="لا يمكن حذف حساب المدير")
     await db.delete(user)
     await db.flush()
+
+
+# ════════════════════════════════════════════
+#  CLIENTS — Full Details for Admin
+# ════════════════════════════════════════════
+
+@router.get("/clients/details", response_model=list[ClientDetail])
+async def list_clients_details(
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_roles(UserRole.ADMIN)),
+):
+    """All clients with vehicles, bookings, orders — for admin."""
+    from decimal import Decimal
+
+    clients_result = await db.execute(
+        select(User).where(User.role == UserRole.CLIENT).order_by(User.created_at.desc())
+    )
+    clients = clients_result.scalars().all()
+
+    result = []
+    for c in clients:
+        # vehicles
+        vehs = (await db.execute(
+            select(Vehicle).where(Vehicle.client_id == c.id)
+        )).scalars().all()
+        vehicles = [{"brand": v.brand, "model": v.model, "plate_number": v.plate_number, "year": v.year, "color": v.color} for v in vehs]
+
+        # bookings (service history)
+        bookings_result = await db.execute(
+            select(Booking, Service)
+            .join(Service, Booking.service_id == Service.id)
+            .where(Booking.client_id == c.id)
+            .order_by(Booking.booking_date.desc())
+        )
+        services_used = []
+        total_spent = Decimal("0")
+        total_visits = 0
+        for b, svc in bookings_result.all():
+            services_used.append({
+                "service_name": svc.name,
+                "service_name_ar": svc.name_ar,
+                "date": str(b.booking_date),
+                "status": b.status.value,
+                "price": float(b.total_price),
+            })
+            if b.status == BookingStatus.COMPLETED:
+                total_visits += 1
+                if b.is_paid:
+                    total_spent += b.total_price
+
+        # orders (store purchases)
+        orders_result = await db.execute(
+            select(Order).where(Order.client_id == c.id).order_by(Order.created_at.desc())
+        )
+        orders_out = []
+        for order in orders_result.scalars().all():
+            items_result = await db.execute(
+                select(OrderItem, Product)
+                .join(Product, OrderItem.product_id == Product.id)
+                .where(OrderItem.order_id == order.id)
+            )
+            items = [
+                {"product_name": prod.name, "product_name_ar": prod.name_ar, "quantity": oi.quantity, "unit_price": float(oi.unit_price)}
+                for oi, prod in items_result.all()
+            ]
+            orders_out.append({
+                "id": order.id,
+                "total_amount": float(order.total_amount),
+                "created_at": order.created_at.isoformat(),
+                "items": items,
+            })
+
+        result.append(ClientDetail(
+            id=c.id,
+            full_name=c.full_name,
+            email=c.email,
+            phone=c.phone,
+            date_of_birth=c.date_of_birth,
+            is_vip=c.is_vip,
+            vip_discount_percent=c.vip_discount_percent or 0,
+            vip_since=c.vip_since,
+            created_at=c.created_at,
+            vehicles=vehicles,
+            total_visits=total_visits,
+            total_spent=float(total_spent),
+            services_used=services_used,
+            orders=orders_out,
+        ))
+
+    return result

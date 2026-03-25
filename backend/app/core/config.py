@@ -30,5 +30,12 @@ class Settings:
         "http://localhost:8000",
     ]
 
+    # Firebase / Push Notifications
+    FIREBASE_PROJECT_ID: str | None = os.getenv("FIREBASE_PROJECT_ID")
+    FIREBASE_SERVICE_ACCOUNT_FILE: str = os.getenv(
+        "FIREBASE_SERVICE_ACCOUNT_FILE",
+        "backend/firebase/service-account.json",
+    )
+
 
 settings = Settings()

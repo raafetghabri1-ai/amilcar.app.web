@@ -17,8 +17,10 @@ export default function AdminDashboard() {
 
   const quickActions = [
     { label: t.admin.actions.bookings, desc: t.admin.actions.bookingsDesc, icon: "📋", href: "/dashboard/admin/bookings" },
+    { label: t.admin.actions.services, desc: t.admin.actions.servicesDesc, icon: "🛠️", href: "/dashboard/admin/services" },
     { label: t.admin.actions.workers, desc: t.admin.actions.workersDesc, icon: "👥", href: "/dashboard/admin/workers" },
     { label: t.admin.actions.inventory, desc: t.admin.actions.inventoryDesc, icon: "📦", href: "/dashboard/admin/inventory" },
+    { label: t.admin.actions.clients, desc: t.admin.actions.clientsDesc, icon: "👤", href: "/dashboard/admin/clients" },
     { label: t.admin.actions.finance, desc: t.admin.actions.financeDesc, icon: "📊", href: "#" },
   ];
 

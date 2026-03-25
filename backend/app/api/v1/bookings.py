@@ -10,6 +10,7 @@ from app.core.security import get_current_user, require_roles
 from app.models.user import User, UserRole
 from app.models.booking import Booking, BookingStatus
 from app.models.service import Service, Vehicle
+from app.services.notification_service import notification_service
 from app.schemas.service import (
     BookingCreate, BookingUpdate, BookingOut, BookingDetail,
     VehicleCreate, VehicleOut, ClientHistory,
@@ -79,6 +80,73 @@ async def _enrich_booking(b: Booking, db: AsyncSession) -> BookingDetail:
             data["worker_name"] = w.full_name
 
     return BookingDetail(**data)
+
+
+async def _send_booking_confirmation_notification(
+    db: AsyncSession,
+    booking: Booking,
+    svc: Service | None,
+) -> None:
+    booking_date = booking.booking_date.strftime("%Y-%m-%d")
+    service_name = svc.name_ar if svc and svc.name_ar else (svc.name if svc else "الخدمة")
+    try:
+        await notification_service.send_to_client(
+            db,
+            booking.client_id,
+            title="تأكيد الحجز ✅",
+            body=f"تم تأكيد حجزك ليوم {booking_date} لخدمة {service_name}",
+            data={
+                "type": "booking_confirmation",
+                "booking_id": str(booking.id),
+                "screen": "/dashboard/client/tracking",
+            },
+        )
+    except Exception:
+        pass
+
+
+async def _send_booking_status_notification(
+    db: AsyncSession,
+    booking: Booking,
+    status: BookingStatus,
+) -> None:
+    messages = {
+        BookingStatus.IN_PROGRESS: {
+            "title": "تحديث حالة السيارة 🔧",
+            "body": "سيارتك الآن قيد المعالجة",
+            "type": "booking_in_progress",
+        },
+        BookingStatus.COMPLETED: {
+            "title": "سيارتك جاهزة ✦",
+            "body": "سيارتك جاهزة للاستلام",
+            "type": "booking_completed",
+        },
+        BookingStatus.CONFIRMED: {
+            "title": "تم تأكيد الموعد ✅",
+            "body": "تم تأكيد موعدك بنجاح",
+            "type": "booking_confirmed",
+        },
+    }
+
+    payload = messages.get(status)
+    if not payload:
+        return
+
+    try:
+        await notification_service.send_to_client(
+            db,
+            booking.client_id,
+            title=payload["title"],
+            body=payload["body"],
+            data={
+                "type": payload["type"],
+                "booking_id": str(booking.id),
+                "screen": "/dashboard/client/tracking",
+                "status": booking.status.value,
+            },
+        )
+    except Exception:
+        pass
 
 
 # ════════════════════════════════════════════
@@ -216,6 +284,7 @@ async def create_booking(
     db.add(booking)
     await db.flush()
     await db.refresh(booking)
+    await _send_booking_confirmation_notification(db, booking, svc)
     return await _enrich_booking(booking, db)
 
 
@@ -235,6 +304,8 @@ async def update_booking(
     if current_user.role == UserRole.WORKER and booking.worker_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not assigned to you")
 
+    previous_status = booking.status
+
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(booking, field, value)
 
@@ -244,6 +315,8 @@ async def update_booking(
 
     await db.flush()
     await db.refresh(booking)
+    if data.status and data.status != previous_status:
+        await _send_booking_status_notification(db, booking, data.status)
     return await _enrich_booking(booking, db)
 
 

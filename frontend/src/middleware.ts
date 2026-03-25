@@ -25,8 +25,12 @@ export function middleware(request: NextRequest) {
     }
 
     // Prevent accessing other role's dashboard
+    // Allow shared routes like /dashboard/settings
+    const sharedPaths = ["/dashboard/settings"];
+    const isShared = sharedPaths.some((p) => pathname.startsWith(p));
+
     const allowedPath = ROLE_PATHS[role];
-    if (allowedPath && !pathname.startsWith(allowedPath)) {
+    if (allowedPath && !isShared && !pathname.startsWith(allowedPath)) {
       return NextResponse.redirect(new URL(allowedPath, request.url));
     }
   }

@@ -70,7 +70,24 @@ amilcar.app.web/
 ### 1. باستخدام Docker Compose
 
 ```bash
-docker compose up -d
+make up
+```
+
+### أوامر آمنة للـ API
+
+بسبب خلل معروف في `docker-compose` القديم داخل بعض البيئات عند تنفيذ إعادة إنشاء الحاوية مباشرة عبر `up --build`، استعمل الأوامر التالية بدل الأمر اليدوي:
+
+```bash
+make api          # build + remove stale container + start api safely
+make api-restart  # restart api safely without hitting recreate bug
+make ps           # show running containers
+make logs-api     # tail backend logs
+```
+
+إذا أردت تشغيل نفس المنطق مباشرة بدون Makefile:
+
+```bash
+./scripts/api-container-safe.sh rebuild
 ```
 
 ### 2. بدون Docker

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-import type { User, WorkerStats } from "@/lib/api";
+import type { User, WorkerStats, AttendanceRecord } from "@/lib/api";
 
 interface WorkerForm {
   full_name: string;
@@ -34,6 +34,22 @@ export default function WorkersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [attendanceWorker, setAttendanceWorker] = useState<User | null>(null);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
+
+  const openAttendance = async (w: User) => {
+    setAttendanceWorker(w);
+    setLoadingAttendance(true);
+    try {
+      const records = await api.get<AttendanceRecord[]>(`/api/v1/attendance/?worker_id=${w.id}`);
+      setAttendanceRecords(records);
+    } catch {
+      setAttendanceRecords([]);
+    } finally {
+      setLoadingAttendance(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -252,6 +268,13 @@ export default function WorkersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <button
+                          onClick={() => openAttendance(w)}
+                          className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-blue-400 transition hover:border-blue-500/50 hover:bg-blue-500/10"
+                          title={t.workers.viewAttendance}
+                        >
+                          📋
+                        </button>
+                        <button
                           onClick={() => openEdit(w)}
                           className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-[var(--amilcar-silver)] transition hover:border-[var(--amilcar-silver)]/50 hover:text-white"
                         >
@@ -417,6 +440,93 @@ export default function WorkersPage() {
                 {t.delete}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attendance Detail Modal */}
+      {attendanceWorker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-lg rounded-2xl border border-white/[0.08] bg-[#111] p-6">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-white">
+                  {t.workers.attendanceLog}
+                </h2>
+                <p className="mt-0.5 text-sm text-[var(--amilcar-text-secondary)]">
+                  {attendanceWorker.full_name}
+                </p>
+              </div>
+              <button
+                onClick={() => setAttendanceWorker(null)}
+                className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-[var(--amilcar-silver)] transition hover:border-white/20"
+              >
+                ✕
+              </button>
+            </div>
+
+            {loadingAttendance ? (
+              <div className="flex items-center justify-center py-10">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--amilcar-red)]" />
+              </div>
+            ) : attendanceRecords.length === 0 ? (
+              <p className="py-10 text-center text-sm text-[var(--amilcar-text-secondary)]">
+                {t.worker.noAttendance}
+              </p>
+            ) : (
+              <div className="max-h-[400px] overflow-y-auto rounded-lg border border-white/[0.06]">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-white/[0.06] bg-black/30">
+                      <th className="px-4 py-2.5 text-xs font-medium text-[var(--amilcar-text-secondary)]">
+                        {t.workers.attDate}
+                      </th>
+                      <th className="px-4 py-2.5 text-xs font-medium text-[var(--amilcar-text-secondary)]">
+                        {t.worker.checkedInAt}
+                      </th>
+                      <th className="px-4 py-2.5 text-xs font-medium text-[var(--amilcar-text-secondary)]">
+                        {t.worker.checkedOutAt}
+                      </th>
+                      <th className="px-4 py-2.5 text-xs font-medium text-[var(--amilcar-text-secondary)]">
+                        {t.workers.table.status}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendanceRecords.map((rec) => {
+                      const statusColors: Record<string, string> = {
+                        present: "bg-green-500/10 text-green-400",
+                        absent: "bg-red-500/10 text-red-400",
+                        late: "bg-yellow-500/10 text-yellow-400",
+                        leave: "bg-blue-500/10 text-blue-400",
+                      };
+                      const statusLabels: Record<string, string> = {
+                        present: t.worker.present,
+                        absent: t.worker.absent,
+                        late: t.worker.late,
+                        leave: t.worker.leave,
+                      };
+                      return (
+                        <tr key={rec.id} className="border-b border-white/[0.04]">
+                          <td className="px-4 py-2.5 text-sm text-white">{rec.date}</td>
+                          <td className="px-4 py-2.5 text-sm text-green-400">
+                            {rec.check_in || "—"}
+                          </td>
+                          <td className="px-4 py-2.5 text-sm text-[var(--amilcar-red)]">
+                            {rec.check_out || t.worker.notCheckedOut}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${statusColors[rec.status] || "bg-white/10 text-white"}`}>
+                              {statusLabels[rec.status] || rec.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -8,6 +8,7 @@ export interface User {
   full_name: string;
   email: string;
   phone: string;
+  date_of_birth: string | null;
   role: UserRole;
   is_active: boolean;
   avatar_url: string | null;
@@ -17,6 +18,23 @@ export interface User {
   vip_discount_percent: number;
   vip_since: string | null;
   created_at: string;
+}
+
+export interface ClientDetail {
+  id: number;
+  full_name: string;
+  email: string;
+  phone: string;
+  date_of_birth: string | null;
+  is_vip: boolean;
+  vip_discount_percent: number;
+  vip_since: string | null;
+  created_at: string;
+  vehicles: { brand: string; model: string; plate_number: string; year: number | null; color: string | null }[];
+  total_visits: number;
+  total_spent: number;
+  services_used: { service_name: string; service_name_ar: string | null; date: string; status: string; price: number }[];
+  orders: { id: number; total_amount: number; created_at: string; items: { product_name: string; product_name_ar: string | null; quantity: number; unit_price: number }[] }[];
 }
 
 export interface WorkerStats {
@@ -148,6 +166,24 @@ export interface LoginResponse {
   user: User;
 }
 
+export interface AttendanceRecord {
+  id: number;
+  worker_id: number;
+  date: string;
+  check_in: string | null;
+  check_out: string | null;
+  status: string;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface WorkerMonthlyStats {
+  completed_this_month: number;
+  completed_total: number;
+  attendance_days: number;
+  performance_points: number;
+}
+
 export interface OrderItem {
   id: number;
   product_id: number;
@@ -223,6 +259,13 @@ class ApiClient {
     }
 
     return res.json();
+  }
+
+  async register(data: { full_name: string; email: string; phone: string; password: string }): Promise<User> {
+    return this.request<User>("/api/v1/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ ...data, role: "client" }),
+    });
   }
 
   async getMe(): Promise<User> {

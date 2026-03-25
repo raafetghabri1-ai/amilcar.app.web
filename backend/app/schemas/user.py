@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 from pydantic import BaseModel, EmailStr, Field
 from app.models.user import UserRole
 
@@ -22,6 +22,7 @@ class UserCreate(BaseModel):
     phone: str = Field(min_length=8, max_length=20)
     password: str = Field(min_length=6)
     role: UserRole = UserRole.CLIENT
+    date_of_birth: dt.date | None = None
     specialty: str | None = None
     salary: float | None = None
 
@@ -30,6 +31,7 @@ class UserUpdate(BaseModel):
     full_name: str | None = None
     email: EmailStr | None = None
     phone: str | None = None
+    date_of_birth: dt.date | None = None
     is_active: bool | None = None
     specialty: str | None = None
     salary: float | None = None
@@ -40,6 +42,7 @@ class UserOut(BaseModel):
     full_name: str
     email: str
     phone: str
+    date_of_birth: dt.date | None = None
     role: UserRole
     is_active: bool
     avatar_url: str | None
@@ -47,8 +50,8 @@ class UserOut(BaseModel):
     salary: float | None
     is_vip: bool = False
     vip_discount_percent: int = 0
-    vip_since: datetime | None = None
-    created_at: datetime
+    vip_since: dt.datetime | None = None
+    created_at: dt.datetime
 
     model_config = {"from_attributes": True}
 
@@ -67,6 +70,25 @@ class WorkerStats(BaseModel):
 class ChangePassword(BaseModel):
     old_password: str
     new_password: str = Field(min_length=6)
+
+
+# ──── Client Full Details (admin view) ────
+class ClientDetail(BaseModel):
+    id: int
+    full_name: str
+    email: str
+    phone: str
+    date_of_birth: dt.date | None = None
+    is_vip: bool = False
+    vip_discount_percent: int = 0
+    vip_since: dt.datetime | None = None
+    created_at: dt.datetime
+    # aggregated
+    vehicles: list[dict] = []
+    total_visits: int = 0
+    total_spent: float = 0
+    services_used: list[dict] = []
+    orders: list[dict] = []
 
 
 # Fix forward reference

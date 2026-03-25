@@ -20,6 +20,16 @@ async def list_services(db: AsyncSession = Depends(get_db)):
     return result.scalars().all()
 
 
+@router.get("/all", response_model=list[ServiceOut])
+async def list_all_services(
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_roles(UserRole.ADMIN)),
+):
+    """قائمة كل الخدمات للمدير، بما في ذلك غير النشطة"""
+    result = await db.execute(select(Service).order_by(Service.category, Service.created_at.desc()))
+    return result.scalars().all()
+
+
 @router.post("/", response_model=ServiceOut, status_code=status.HTTP_201_CREATED)
 async def create_service(
     data: ServiceCreate,
