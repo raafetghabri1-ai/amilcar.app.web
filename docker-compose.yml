@@ -23,6 +23,8 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://amilcar_user:amilcar_pass@db:5432/amilcar_db
       DATABASE_URL_SYNC: postgresql://amilcar_user:amilcar_pass@db:5432/amilcar_db
+    volumes:
+      - ./backend/firebase:/app/firebase:ro
     depends_on:
       - db
 

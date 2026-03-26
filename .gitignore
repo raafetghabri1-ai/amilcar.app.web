@@ -10,9 +10,13 @@ venv/
 .env
 .env.local
 .env.*.local
+
+# Firebase / sensitive keys
 backend/firebase/service-account.json
 mobile_app/android/app/google-services.json
 mobile_app/ios/Runner/GoogleService-Info.plist
+*-firebase-adminsdk-*.json
+google-services.json
 
 # Node
 node_modules/
