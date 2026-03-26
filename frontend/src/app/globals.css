@@ -41,8 +41,8 @@
 
   /* النصوص */
   --amilcar-white: #FFFFFF;
-  --amilcar-text-secondary: #B0B0B0;
-  --amilcar-text-muted: #666666;
+  --amilcar-text-secondary: #C8C8C8;
+  --amilcar-text-muted: #888888;
 
   /* الخط الفاصل */
   --amilcar-navy: #1A2744;
@@ -71,6 +71,32 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: "Ethereal", Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Improve text readability across all elements */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+p, span, label, td, th, li, a {
+  line-height: 1.65;
+}
+
+/* Improve small text visibility */
+.text-xs {
+  font-size: 0.8125rem; /* 13px instead of 12px */
+  line-height: 1.5;
+}
+
+.text-sm {
+  font-size: 0.9rem; /* ~14.4px instead of 14px */
+  line-height: 1.6;
 }
 
 /* Scrollbar styling */
@@ -95,8 +121,8 @@ body {
   --amilcar-black-card: #FFFFFF;
   --amilcar-black-hover: #F0F0F0;
   --amilcar-white: #111111;
-  --amilcar-text-secondary: #555555;
-  --amilcar-text-muted: #888888;
+  --amilcar-text-secondary: #444444;
+  --amilcar-text-muted: #777777;
   --background: #F5F5F5;
   --foreground: #111111;
 }
