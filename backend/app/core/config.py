@@ -25,10 +25,8 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
     # CORS
-    ALLOWED_ORIGINS: list[str] = [
-        "http://localhost:3000",
-        "http://localhost:8000",
-    ]
+    _origins_raw: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8000")
+    ALLOWED_ORIGINS: list[str] = [o.strip() for o in _origins_raw.split(",") if o.strip()]
 
     # Firebase / Push Notifications
     FIREBASE_PROJECT_ID: str | None = os.getenv("FIREBASE_PROJECT_ID")

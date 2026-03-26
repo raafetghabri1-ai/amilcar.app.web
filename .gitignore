@@ -10,6 +10,7 @@ venv/
 .env
 .env.local
 .env.*.local
+.env.production
 
 # Firebase / sensitive keys
 backend/firebase/service-account.json
@@ -38,3 +39,6 @@ Thumbs.db
 dist/
 build/
 *.log
+
+# SSL / Certbot
+certbot/
