@@ -10,6 +10,7 @@ from app.core.security import get_current_user, require_roles
 from app.models.user import User, UserRole
 from app.models.booking import Booking, BookingStatus
 from app.models.service import Service, Vehicle
+from app.models.attendance import Revenue, RevenueType
 from app.services.notification_service import notification_service
 from app.schemas.service import (
     BookingCreate, BookingUpdate, BookingOut, BookingDetail,
@@ -20,6 +21,10 @@ router = APIRouter()
 
 VIP_THRESHOLD = 5       # completed visits to earn VIP
 VIP_DISCOUNT = 10       # 10 %
+
+# ─── Business hours ───
+OPENING_HOUR = 8    # 08:00
+CLOSING_HOUR = 19   # 19:00 (last booking must start before this)
 
 
 # ─── helpers ───
@@ -43,6 +48,28 @@ async def _check_vip_promotion(client_id: int, db: AsyncSession) -> None:
         client.vip_discount_percent = VIP_DISCOUNT
         client.vip_since = dt.datetime.now(dt.timezone.utc)
         await db.flush()
+
+
+async def _auto_create_revenue(booking: Booking, db: AsyncSession) -> None:
+    """Create a revenue record when a booking is completed (prevents duplicates)."""
+    existing = (await db.execute(
+        select(Revenue).where(Revenue.booking_id == booking.id)
+    )).scalar_one_or_none()
+    if existing:
+        return  # already recorded
+
+    svc = (await db.execute(select(Service).where(Service.id == booking.service_id))).scalar_one_or_none()
+    description = f"خدمة: {svc.name_ar or svc.name}" if svc else f"حجز #{booking.id}"
+
+    revenue = Revenue(
+        booking_id=booking.id,
+        revenue_type=RevenueType.SERVICE,
+        amount=booking.total_price,
+        description=description,
+        date=booking.booking_date,
+    )
+    db.add(revenue)
+    await db.flush()
 
 
 async def _enrich_booking(b: Booking, db: AsyncSession) -> BookingDetail:
@@ -244,6 +271,23 @@ async def create_booking(
     if not svc:
         raise HTTPException(status_code=404, detail="Service not found")
 
+    # ── working hours validation ──
+    hour = data.booking_time.hour
+    if hour < OPENING_HOUR or hour >= CLOSING_HOUR:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Bookings must be between {OPENING_HOUR}:00 and {CLOSING_HOUR}:00",
+        )
+
+    # ── minimum advance booking (2 hours ahead) ──
+    now = dt.datetime.now(dt.timezone.utc)
+    booking_dt = dt.datetime.combine(data.booking_date, data.booking_time, tzinfo=dt.timezone.utc)
+    if booking_dt < now + dt.timedelta(hours=2):
+        raise HTTPException(
+            status_code=400,
+            detail="Bookings must be at least 2 hours in advance",
+        )
+
     # ── conflict check ──
     duration = svc.duration_minutes
     req_start = dt.datetime.combine(data.booking_date, data.booking_time)
@@ -312,6 +356,7 @@ async def update_booking(
     # ── auto-promote to VIP when booking completed ──
     if data.status == BookingStatus.COMPLETED:
         await _check_vip_promotion(booking.client_id, db)
+        await _auto_create_revenue(booking, db)
 
     await db.flush()
     await db.refresh(booking)

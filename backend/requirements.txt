@@ -17,3 +17,6 @@ bcrypt==4.2.*
 
 # ──── Notifications ────
 firebase-admin==6.8.*
+
+# ──── Rate Limiting ────
+slowapi==0.1.*

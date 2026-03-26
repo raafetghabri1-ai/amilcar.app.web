@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import require_roles, get_current_user
 from app.models.user import User, UserRole
-from app.models.product import Product, Supplier, PurchaseLog
+from app.models.product import Product, ProductCategory, Supplier, PurchaseLog
 from app.schemas.management import (
     ProductCreate, ProductUpdate, ProductOut,
     SupplierCreate, SupplierUpdate, SupplierOut,
@@ -22,12 +22,20 @@ router = APIRouter()
 @router.get("/", response_model=list[ProductOut])
 async def list_products(
     include_inactive: bool = False,
+    category: ProductCategory | None = None,
+    search: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
-    """قائمة المنتجات"""
+    """قائمة المنتجات مع فلترة بالفئة والبحث بالاسم"""
     query = select(Product)
     if not include_inactive:
         query = query.where(Product.is_active.is_(True))
+    if category:
+        query = query.where(Product.category == category)
+    if search:
+        query = query.where(
+            Product.name.ilike(f"%{search}%") | Product.name_ar.ilike(f"%{search}%")
+        )
     result = await db.execute(query.order_by(Product.category))
     return [ProductOut.from_product(p) for p in result.scalars().all()]
 
