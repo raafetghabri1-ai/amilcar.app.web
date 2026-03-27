@@ -20,3 +20,6 @@ firebase-admin==6.8.*
 
 # ──── Rate Limiting ────
 slowapi==0.1.*
+
+# ──── PDF Generation ────
+reportlab==4.*

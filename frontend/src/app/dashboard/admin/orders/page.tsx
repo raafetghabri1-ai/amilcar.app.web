@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
-import { api, type OrderOut, type OrderStatus } from "@/lib/api";
+import { api, type OrderOut, type OrderStatus, type PaymentMethod } from "@/lib/api";
 
 /* ═══════════════════ helpers ═══════════════════ */
 
@@ -58,6 +58,24 @@ export default function OrdersPage() {
   async function updateStatus(id: number, status: OrderStatus) {
     try {
       await api.patch(`/api/v1/orders/${id}`, { status });
+      await loadOrders();
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function togglePaid(id: number, is_paid: boolean) {
+    try {
+      await api.patch(`/api/v1/orders/${id}`, { is_paid });
+      await loadOrders();
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function setPaymentMethod(id: number, payment_method: PaymentMethod) {
+    try {
+      await api.patch(`/api/v1/orders/${id}`, { payment_method });
       await loadOrders();
     } catch {
       /* ignore */
@@ -189,6 +207,8 @@ export default function OrdersPage() {
                   expanded={expandedId === order.id}
                   onToggle={() => setExpandedId(expandedId === order.id ? null : order.id)}
                   onUpdateStatus={updateStatus}
+                  onTogglePaid={togglePaid}
+                  onSetPaymentMethod={setPaymentMethod}
                   onCancel={() => setConfirmCancel(order.id)}
                   getStatusLabel={getStatusLabel}
                 />
@@ -241,6 +261,8 @@ function OrderRow({
   expanded,
   onToggle,
   onUpdateStatus,
+  onTogglePaid,
+  onSetPaymentMethod,
   onCancel,
   getStatusLabel,
 }: {
@@ -250,6 +272,8 @@ function OrderRow({
   expanded: boolean;
   onToggle: () => void;
   onUpdateStatus: (id: number, status: OrderStatus) => void;
+  onTogglePaid: (id: number, is_paid: boolean) => void;
+  onSetPaymentMethod: (id: number, pm: PaymentMethod) => void;
   onCancel: () => void;
   getStatusLabel: (s: OrderStatus) => string;
 }) {
@@ -332,6 +356,36 @@ function OrderRow({
                 </div>
               ))}
             </div>
+
+            {/* Payment controls */}
+            <div className="mt-4 flex flex-wrap items-center gap-3" onClick={(e) => e.stopPropagation()}>
+              {/* Payment status toggle */}
+              <button
+                onClick={() => onTogglePaid(order.id, !order.is_paid)}
+                className={`rounded-full px-3 py-1 text-xs font-medium border transition ${
+                  order.is_paid
+                    ? "bg-green-500/20 text-green-400 border-green-500/30"
+                    : "bg-red-500/20 text-red-400 border-red-500/30"
+                }`}
+              >
+                {order.is_paid ? t.invoices.payment.paid : t.invoices.payment.unpaid}
+              </button>
+
+              {/* Payment method selector */}
+              <select
+                value={order.payment_method || ""}
+                onChange={(e) => {
+                  if (e.target.value) onSetPaymentMethod(order.id, e.target.value as PaymentMethod);
+                }}
+                className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white"
+              >
+                <option value="">—</option>
+                <option value="cash">{t.invoices.payment.cash}</option>
+                <option value="card">{t.invoices.payment.card}</option>
+                <option value="bank_transfer">{t.invoices.payment.bank_transfer}</option>
+              </select>
+            </div>
+
             {order.updated_at && (
               <p className="mt-3 text-xs text-[var(--amilcar-text-secondary)]">
                 {t.orders.updateStatus}: {new Date(order.updated_at).toLocaleString(lang === "ar" ? "ar-TN" : "fr-FR")}

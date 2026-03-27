@@ -12,6 +12,7 @@ from app.core.security import get_current_user, require_roles
 from app.models.user import User, UserRole
 from app.models.product import Product
 from app.models.order import Order, OrderItem, OrderStatus
+from app.models.booking import PaymentMethod
 from app.services.notification_service import notification_service
 
 router = APIRouter()
@@ -29,7 +30,9 @@ class OrderCreate(BaseModel):
 
 
 class OrderStatusUpdate(BaseModel):
-    status: OrderStatus
+    status: OrderStatus | None = None
+    is_paid: bool | None = None
+    payment_method: PaymentMethod | None = None
 
 
 class OrderItemOut(BaseModel):
@@ -49,6 +52,8 @@ class OrderOut(BaseModel):
     client_name: str | None = None
     total_amount: Decimal
     status: OrderStatus
+    payment_method: PaymentMethod | None = None
+    is_paid: bool = False
     created_at: dt.datetime
     updated_at: dt.datetime | None = None
     items: list[OrderItemOut] = []
@@ -83,6 +88,8 @@ async def _enrich_order(order: Order, db: AsyncSession) -> OrderOut:
         client_name=client.full_name if client else None,
         total_amount=order.total_amount,
         status=order.status,
+        payment_method=order.payment_method,
+        is_paid=order.is_paid,
         created_at=order.created_at,
         updated_at=order.updated_at,
         items=items,
@@ -187,10 +194,16 @@ async def update_order_status(
     if order.status == OrderStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Cannot update a completed order")
 
-    order.status = data.status
+    if data.status:
+        order.status = data.status
+    if data.is_paid is not None:
+        order.is_paid = data.is_paid
+    if data.payment_method:
+        order.payment_method = data.payment_method
     await db.flush()
     await db.refresh(order)
-    await _send_order_notification(db, order, data.status)
+    if data.status:
+        await _send_order_notification(db, order, data.status)
     return await _enrich_order(order, db)
 
 

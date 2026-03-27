@@ -201,9 +201,29 @@ export interface OrderOut {
   client_name: string | null;
   total_amount: number;
   status: OrderStatus;
+  payment_method: PaymentMethod | null;
+  is_paid: boolean;
   created_at: string;
   updated_at: string | null;
   items: OrderItem[];
+}
+
+export interface InvoiceOut {
+  id: number;
+  invoice_number: string;
+  booking_id: number | null;
+  order_id: number | null;
+  client_id: number;
+  client_name: string | null;
+  client_phone: string | null;
+  amount: number;
+  vat_amount: number;
+  total_amount: number;
+  payment_method: PaymentMethod | null;
+  is_paid: boolean;
+  notes: string | null;
+  issue_date: string;
+  created_at: string;
 }
 
 export interface MonthlyReport {

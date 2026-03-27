@@ -11,6 +11,7 @@ venv/
 .env.local
 .env.*.local
 .env.production
+.env.production.save
 
 # Firebase / sensitive keys
 backend/firebase/service-account.json
