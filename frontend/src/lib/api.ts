@@ -193,12 +193,42 @@ export interface OrderItem {
   unit_price: number;
 }
 
+export type OrderStatus = "pending" | "confirmed" | "ready" | "completed" | "cancelled";
+
 export interface OrderOut {
   id: number;
   client_id: number;
+  client_name: string | null;
   total_amount: number;
+  status: OrderStatus;
   created_at: string;
+  updated_at: string | null;
   items: OrderItem[];
+}
+
+export interface MonthlyReport {
+  year: number;
+  months: { month: number; revenue: number; expense: number; profit: number }[];
+}
+
+export interface ServiceRevenue {
+  service_id: number;
+  service_name: string;
+  service_name_ar: string | null;
+  bookings_count: number;
+  total_revenue: number;
+}
+
+export interface ExpenseByCat {
+  category: string;
+  count: number;
+  total: number;
+}
+
+export interface FinanceSummary {
+  total_revenue: number;
+  total_expense: number;
+  net_profit: number;
 }
 
 class ApiClient {
